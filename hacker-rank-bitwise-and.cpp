@@ -18,7 +18,7 @@ int main() {
          while (nWalk){
             nWalk >>= 1;
             nMask <<= 1;
-            }
+         }
          nMask = nMask - 1;
          printf("%u\n", (nStart & ~nMask & nEnd));
     }

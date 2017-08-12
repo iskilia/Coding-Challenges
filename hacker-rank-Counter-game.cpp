@@ -11,12 +11,12 @@ int main() {
     int numTestcases;
     cin >> numTestcases;
     for (int i = 0; i < numTestcases; i++){
-        unsigned long long n;
+        unsigned long long N;
         int count = 0;
-        cin >> n;
-        n--;
-        while(n) {
-            n &= (n-1);
+        cin >> N;
+        N--;
+        while(N) {
+            N &= (N-1);
             count++;
         }
         cout << (count & 1 ? "Louise" : "Richard") << endl;
