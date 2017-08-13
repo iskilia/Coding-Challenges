@@ -1,3 +1,4 @@
+/* Counting Game - Hackerrank */
 #include <cmath>
 #include <cstdio>
 #include <vector>

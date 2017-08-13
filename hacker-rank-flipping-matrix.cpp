@@ -1,4 +1,5 @@
 // AUTHOR: iskilia
+/* Flipping Matrix - Hackerrank */
 #include<bits/stdc++.h>
 #include <cmath>
 #include <cstdio>

@@ -1,3 +1,4 @@
+/* Bitwise AND Product - Hackerrank */
 #include <cmath>
 #include <cstdio>
 #include <vector>
