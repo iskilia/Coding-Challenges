@@ -1,165 +1,107 @@
-#include "bits/stdc++.h"
+#include <bits/stdc++.h>
+
 using namespace std;
-#define rep(i,n) for(int (i)=0;(i)<(int)(n);++(i))
-#define rer(i,l,u) for(int (i)=(int)(l);(i)<=(int)(u);++(i))
-#define reu(i,l,u) for(int (i)=(int)(l);(i)<(int)(u);++(i))
-static const int INF = 0x3f3f3f3f; static const long long INFL = 0x3f3f3f3f3f3f3f3fLL;
-typedef vector<int> vi; typedef pair<int, int> pii; typedef vector<pair<int, int> > vpii; typedef long long ll;
-template<typename T, typename U> static void amin(T &x, U y) { if (y < x) x = y; }
-template<typename T, typename U> static void amax(T &x, U y) { if (x < y) x = y; }
 
-class IncrementalAhoCorasic {
-	static const int Alphabets = 26;
-	static const int AlphabetBase = 'a';
-	struct Node {
-		Node *fail;
-		Node *next[Alphabets];
-		long long sum;
-		Node() : fail(NULL), next{}, sum(0) { }
-	};
+typedef long long ll;
 
-	struct String {
-		string str;
-		int weight;
-	};
+#define F first
+#define S second
 
-public:
-	//totalLen = sum of (len + 1)
-	void init(int totalLen) {
-		nodes.resize(totalLen);
-		nNodes = 0;
-		strings.clear();
-		roots.clear();
-		sizes.clear();
-		que.resize(totalLen);
-	}
+const int MAXN = 2e6 + 10;
+const int XX = 1e5 + 10;
+const int C = 26;
 
-	void insert(const string &str, int weight) {
-		strings.push_back(String{ str, weight });
-		roots.push_back(nodes.data() + nNodes);
-		sizes.push_back(1);
-		nNodes += (int)str.size() + 1;
-		auto check = [&]() { return sizes.size() > 1 && sizes.end()[-1] == sizes.end()[-2]; };
-		if (!check())
-			makePMA(strings.end() - 1, strings.end(), roots.back(), que);
-		while (check()) {
-			int m = sizes.back();
-			roots.pop_back();
-			sizes.pop_back();
-			sizes.back() += m;
-			if (!check())
-				makePMA(strings.end() - m * 2, strings.end(), roots.back(), que);
-		}
-	}
+int n, qq, pos[MAXN], nxt[MAXN][C], f[MAXN], sz, val[MAXN];
 
-	long long match(const string &str) const {
-		long long res = 0;
-		for (const Node *t : roots)
-			res += matchPMA(t, str);
-		return res;
-	}
+int insert(string &t) {
+  int cur = 0;
+  for (char c : t) {
+    if (!nxt[cur][c - 'a'])
+      nxt[cur][c - 'a'] = ++sz;
+    cur = nxt[cur][c - 'a'];
+  }
+  return cur;
+}
 
-private:
-	static void makePMA(vector<String>::const_iterator begin, vector<String>::const_iterator end, Node *nodes, vector<Node*> &que) {
-		int nNodes = 0;
-		Node *root = new(&nodes[nNodes ++]) Node();
-		for (auto it = begin; it != end; ++ it) {
-			Node *t = root;
-			for (char c : it->str) {
-				Node *&n = t->next[c - AlphabetBase];
-				if (n == nullptr)
-					n = new(&nodes[nNodes ++]) Node();
-				t = n;
-			}
-			t->sum += it->weight;
-		}
-		int qt = 0;
-		for (Node *&n : root->next) {
-			if (n != nullptr) {
-				n->fail = root;
-				que[qt ++] = n;
-			} else {
-				n = root;
-			}
-		}
-		for (int qh = 0; qh != qt; ++ qh) {
-			Node *t = que[qh];
-			int a = 0;
-			for (Node *n : t->next) {
-				if (n != nullptr) {
-					que[qt ++] = n;
-					Node *r = t->fail;
-					while (r->next[a] == nullptr)
-						r = r->fail;
-					n->fail = r->next[a];
-					n->sum += r->next[a]->sum;
-				}
-				++ a;
-			}
-		}
-	}
+int q[MAXN], sub[MAXN], st[MAXN], ft[MAXN], cur[MAXN];
+void aho() {
+  int h = 0, t = 0;
+  for (int w = 0; w < C; w++)
+    if (nxt[0][w])
+      q[t++] = nxt[0][w];
+  while (h < t) {
+    int v = q[h++];
+    for (int w = 0; w < C; w++)
+      if (nxt[v][w]) {
+        f[nxt[v][w]] = nxt[f[v]][w];
+        q[t++] = nxt[v][w];
+      } else
+        nxt[v][w] = nxt[f[v]][w];
+  }
 
-	static long long matchPMA(const Node *t, const string &str) {
-		long long res = 0;
-		for (char c : str) {
-			int a = c - AlphabetBase;
-			while (t->next[a] == nullptr)
-				t = t->fail;
-			t = t->next[a];
-			res += t->sum;
-		}
-		return res;
-	}
+  fill(sub, sub + sz + 1, 1);
+  for (int i = t - 1; ~i; i--)
+    sub[f[q[i]]] += sub[q[i]];
+  ft[0] = sz + 1;
+  cur[0] = 1;
+  for (int j = 0; j < t; j++) {
+    int i = q[j];
+    st[i] = cur[f[i]];
+    cur[f[i]] = ft[i] = st[i] + sub[i];
+    cur[i] = st[i] + 1;
+  }
+}
 
-
-	vector<Node> nodes;
-	int nNodes;
-	vector<String> strings;
-	vector<Node*> roots;
-	vector<int> sizes;
-	vector<Node*> que;
-};
+ll fen[MAXN], ans[MAXN];
+vector<pair<pair<int, int>, int>> vec[XX];
+void add(int v, int val) {
+  for (v++; v < MAXN; v += v & -v)
+    fen[v] += val;
+}
+ll get(int v) {
+  ll ret = 0;
+  for (; v; v -= v & -v)
+    ret += fen[v];
+  return ret;
+}
 
 int main() {
-	int n;
-	static char buf[2000001];
-	while (~scanf("%d", &n)) {
-		vector<string> patterns(n);
-		int totalLen = 0;
-		rep(i, n) {
-			scanf("%s", buf);
-			patterns[i] = buf;
-			totalLen += (int)patterns[i].size() + 1;
-		}
-		vector<int> values(n);
-		for (int i = 0; i < n; ++ i)
-			scanf("%d", &values[i]);
-		int Q;
-		scanf("%d", &Q);
-		vector<string> strings(Q);
-		vector<vector<int>> queries(n + 1);
-		rep(i, Q) {
-			int L; int R;
-			scanf("%d%d", &L, &R), ++ R;
-			scanf("%s", buf);
-			strings[i] = buf;
-			queries[L].push_back(i * 2 + 0);
-			queries[R].push_back(i * 2 + 1);
-		}
-		IncrementalAhoCorasic iac;
-		iac.init(totalLen);
-		vector<long long> ans(Q, 0);
-		rep(i, n) {
-			iac.insert(patterns[i], values[i]);
-			for (int qi : queries[i + 1])
-				ans[qi / 2] += iac.match(strings[qi / 2]) * (qi % 2 == 0 ? -1 : 1);
-		}
-		long long minSum = INFL, maxSum = -INFL;
-		rep(i, Q) {
-			amin(minSum, ans[i]);
-			amax(maxSum, ans[i]);
-		}
-		printf("%lld %lld\n", minSum, maxSum);
-	}
-	return 0;
+  ios::sync_with_stdio(false);
+  cin.tie(0);
+  int n;
+  cin >> n;
+  for (int i = 0; i < n; i++) {
+    string t;
+    cin >> t;
+    pos[i] = insert(t);
+  }
+  for (int i = 0; i < n; i++)
+    cin >> val[i];
+  aho();
+  cin >> qq;
+  for (int i = 0; i < qq; i++) {
+    int l, r;
+    string s;
+    cin >> l >> r >> s, r++;
+    int v = 0;
+    for (char c : s) {
+      v = nxt[v][c - 'a'];
+      vec[l].push_back({{v, -1}, i});
+      vec[r].push_back({{v, 1}, i});
+    }
+  }
+
+  for (int i = 0; i < n; i++) {
+    add(st[pos[i]], val[i]);
+    add(ft[pos[i]], -val[i]);
+
+    for (auto &x : vec[i + 1])
+      ans[x.S] += get(st[x.F.F] + 1) * x.F.S;
+  }
+
+  ll mx = -1, mn = 1e18;
+  for (int i = 0; i < qq; i++)
+    mx = max(mx, ans[i]), mn = min(mn, ans[i]);
+  cout << mn << " " << mx << "\n";
+  return 0;
 }
