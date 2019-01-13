@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include <cmath> 
+#include <cmath>
 using namespace std;
 
 // Complete the anagram function below.
