@@ -2,87 +2,106 @@
 
 using namespace std;
 
-vector<string> split_string(string);
+typedef long long ll;
 
+#define F first
+#define S second
 
+const int MAXN = 2e6 + 10;
+const int XX = 1e5 + 10;
+const int C = 26;
 
-int main()
-{
-    int n;
-    cin >> n;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+int n, qq, pos[MAXN], nxt[MAXN][C], f[MAXN], sz, val[MAXN];
 
-    string genes_temp_temp;
-    getline(cin, genes_temp_temp);
-
-    vector<string> genes_temp = split_string(genes_temp_temp);
-
-    vector<string> genes(n);
-
-    for (int i = 0; i < n; i++) {
-        string genes_item = genes_temp[i];
-
-        genes[i] = genes_item;
-    }
-
-    string health_temp_temp;
-    getline(cin, health_temp_temp);
-
-    vector<string> health_temp = split_string(health_temp_temp);
-
-    vector<int> health(n);
-
-    for (int i = 0; i < n; i++) {
-        int health_item = stoi(health_temp[i]);
-
-        health[i] = health_item;
-    }
-
-    int s;
-    cin >> s;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-    for (int s_itr = 0; s_itr < s; s_itr++) {
-        string firstLastd_temp;
-        getline(cin, firstLastd_temp);
-
-        vector<string> firstLastd = split_string(firstLastd_temp);
-
-        int first = stoi(firstLastd[0]);
-
-        int last = stoi(firstLastd[1]);
-
-        string d = firstLastd[2];
-    }
-
-    return 0;
+int insert(string &t) {
+  int cur = 0;
+  for (char c : t) {
+    if (!nxt[cur][c - 'a'])
+      nxt[cur][c - 'a'] = ++sz;
+    cur = nxt[cur][c - 'a'];
+  }
+  return cur;
 }
 
-vector<string> split_string(string input_string) {
-    string::iterator new_end = unique(input_string.begin(), input_string.end(), [] (const char &x, const char &y) {
-        return x == y and x == ' ';
-    });
+int q[MAXN], sub[MAXN], st[MAXN], ft[MAXN], cur[MAXN];
+void aho() {
+  int h = 0, t = 0;
+  for (int w = 0; w < C; w++)
+    if (nxt[0][w])
+      q[t++] = nxt[0][w];
+  while (h < t) {
+    int v = q[h++];
+    for (int w = 0; w < C; w++)
+      if (nxt[v][w]) {
+        f[nxt[v][w]] = nxt[f[v]][w];
+        q[t++] = nxt[v][w];
+      } else
+        nxt[v][w] = nxt[f[v]][w];
+  }
 
-    input_string.erase(new_end, input_string.end());
+  fill(sub, sub + sz + 1, 1);
+  for (int i = t - 1; ~i; i--)
+    sub[f[q[i]]] += sub[q[i]];
+  ft[0] = sz + 1;
+  cur[0] = 1;
+  for (int j = 0; j < t; j++) {
+    int i = q[j];
+    st[i] = cur[f[i]];
+    cur[f[i]] = ft[i] = st[i] + sub[i];
+    cur[i] = st[i] + 1;
+  }
+}
 
-    while (input_string[input_string.length() - 1] == ' ') {
-        input_string.pop_back();
+ll fen[MAXN], ans[MAXN];
+vector<pair<pair<int, int>, int>> vec[XX];
+void add(int v, int val) {
+  for (v++; v < MAXN; v += v & -v)
+    fen[v] += val;
+}
+ll get(int v) {
+  ll ret = 0;
+  for (; v; v -= v & -v)
+    ret += fen[v];
+  return ret;
+}
+
+int main() {
+  ios::sync_with_stdio(false);
+  cin.tie(0);
+  int n;
+  cin >> n;
+  for (int i = 0; i < n; i++) {
+    string t;
+    cin >> t;
+    pos[i] = insert(t);
+  }
+  for (int i = 0; i < n; i++)
+    cin >> val[i];
+  aho();
+  cin >> qq;
+  for (int i = 0; i < qq; i++) {
+    int l, r;
+    string s;
+    cin >> l >> r >> s, r++;
+    int v = 0;
+    for (char c : s) {
+      v = nxt[v][c - 'a'];
+      vec[l].push_back({{v, -1}, i});
+      vec[r].push_back({{v, 1}, i});
     }
+  }
 
-    vector<string> splits;
-    char delimiter = ' ';
+  for (int i = 0; i < n; i++) {
+    add(st[pos[i]], val[i]);
+    add(ft[pos[i]], -val[i]);
 
-    size_t i = 0;
-    size_t pos = input_string.find(delimiter);
+    for (auto &x : vec[i + 1])
+      ans[x.S] += get(st[x.F.F] + 1) * x.F.S;
+  }
 
-    while (pos != string::npos) {
-        splits.push_back(input_string.substr(i, pos - i));
-
-        i = pos + 1;
-        pos = input_string.find(delimiter, i);
-    }
-
-    splits.push_back(input_string.substr(i, min(pos, input_string.length()) - i + 1));
-
-    return splits;
+  ll mx = -1, mn = 1e18;
+  for (int i = 0; i < qq; i++)
+    mx = max(mx, ans[i]), mn = min(mn, ans[i]);
+  cout << mn << " " << mx << "\n";
+  return 0;
 }
