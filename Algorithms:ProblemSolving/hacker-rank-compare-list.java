@@ -20,9 +20,9 @@
             curr1 = curr1.next;
             curr2 = curr2.next;
         }
-        if(curr1 == null || curr2 == null){
-            return false;
-        } else {
+        if(curr1 == null && curr2 == null){
             return true;
+        } else {
+            return false;
         }
     }
